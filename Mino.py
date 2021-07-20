@@ -1,4 +1,4 @@
-class Mino():
+class Mino:
     def __init__(self):
         self.shapes = [] #ミノの形
         self.x = 0 #x座標
@@ -10,3 +10,15 @@ class Mino():
 
     def rotateLeft(self):
         self.rotateNum = (self.rotateNum-1)%4
+
+    def moveRight(self):
+        self.x += 1
+    
+    def moveLeft(self):
+        self.x -= 1
+
+    def moveDown(self):
+        self.y += 1
+    
+    def moveDown(self,moved_y):
+        self.y = moved_y
