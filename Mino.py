@@ -1,6 +1,6 @@
 class Mino:
-    def __init__(self):
-        self.shapes = [] #ミノの形
+    def __init__(self,shapes):
+        self.shapes = shapes #ミノの形
         self.x = 0 #x座標
         self.y = 0 #y座標
         self.rotateNum = 0 # 値×90度 時計回りに回転
@@ -17,7 +17,7 @@ class Mino:
     def moveLeft(self):
         self.x -= 1
 
-    def moveDown(self):
+    def drop(self):
         self.y += 1
     
     def moveDown(self,moved_y):
