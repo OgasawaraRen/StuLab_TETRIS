@@ -1,10 +1,10 @@
 import pygame
 from pygame.locals import *
-import ViewConst
+import Const
 import numpy as np
 
 class View:
-    colors = {0:(58,58,58),1:(250,250,250),-1:(255,0,0)}
+    colors = Const.COLORS
     def __init__(self,screen):
         self.screen = screen
         #screen.fill((89,87,87))
@@ -12,7 +12,7 @@ class View:
 
 
     def drawBoard(self,board,mino):
-        blockSize = ViewConst.BLOCK_SIZE
+        blockSize = Const.BLOCK_SIZE
         #落下中のミノ以外の盤面を描画
         for y,row in enumerate(board):
             for x,block in enumerate(row):
