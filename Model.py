@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import copy
 from Mino import Mino
 
 class Model:
@@ -12,14 +13,14 @@ class Model:
         self.TRAP = 10
         self.baseShape = [] #７種類のミノ（０度）
         self.allMinos = self.setAllMinos() #7種類のミノ(Mino型)
-        self.board = np.zeros([self.BOARD_H,self.BOARD_W]) #現在の盤面 状態:0=空白 1=ブロックが存在 -1=トラップマス
-        self.nexts = self.initNexts(self.allMinos) #落下するミノ
+        self.board = np.zeros([self.BOARD_H,self.BOARD_W],dtype=int) #現在の盤面 状態:0=空白 1=ブロックが存在 -1=トラップマス
+        self.nexts = self.initNexts(copy.deepcopy(self.allMinos)) #落下するミノ
         self.dropMinoNum = 0 #落下中のミノのインデックス
         self.mino = self.nexts[self.dropMinoNum] #落下中のミノ
         self.holdMino = None #ホールド中のミノ(存在しなければNone)
         #self.hold = Hold()
         self.minoIsOutside = False #ミノが枠外に出ているか？
-        self.canHold = False #ホールドが可能か？(ホールドはターンごとに一回のみ可能)
+        self.canHold = True #ホールドが可能か？(ホールドはターンごとに一回のみ可能)
         self.initTraps() #トラップマスを設置
         self.view = view
         self.view.drawBoard(self.board,self.mino)
@@ -39,16 +40,16 @@ class Model:
             shapes = self.getShapes(baseShape[i])
             mino = Mino(shapes)#ミノを生成、４パターンの回転形を設定
             allminos.append(mino)
-        return allminos.copy()
+        return allminos
 
     def getShapes(self,baseShape)->[np.ndarray]:
         #引数で受け取った形を4パターン(90度回転*4)にして返す
-        return [np.rot90(baseShape,i).copy() for i in range(0,-4,-1)]
+        return [np.rot90(baseShape,i) for i in range(0,-4,-1)]
 
     def initNexts(self,minos)->[np.ndarray]:
         #14個のミノを返す
-        sample1 = random.sample(minos,self.NUM_MINO)
-        sample2 = random.sample(minos,self.NUM_MINO)
+        sample1 = random.sample(copy.deepcopy(minos),self.NUM_MINO)
+        sample2 = random.sample(copy.deepcopy(minos),self.NUM_MINO)
         nextMinos = sample1 + sample2
         return nextMinos
 
@@ -142,7 +143,8 @@ class Model:
         return False
 
     def putMino(self):
-        #盤面にミノを設置(canSetは通過している前提)
+        #盤面にミノを設置(canSetは通過している前提)、ホールドを許可
+        self.canHold = True
         self.minoIsOutside = False
         rotateNum = self.mino.rotateNum
         for i,minoRow in enumerate(self.mino.shapes[rotateNum]):
@@ -156,22 +158,27 @@ class Model:
                     self.board[blockY][blockX] = block
 
     def loadMino(self):
+        print("loadMino")
         #dropMinoNumをインクリメント,落下ミノを更新(必要があればreloadNext)
         self.dropMinoNum += 1
         if self.dropMinoNum >= 7:
             print("call reload")
             self.reloadNext()
+            print(self.dropMinoNum)
         self.mino = self.nexts[self.dropMinoNum]
+        print(self.mino)
 
     def reloadNext(self):
         #前半7つを削除、新しく7つを付け足す、dropMinoNumを0に(リセット)
         del self.nexts[:7]
-        self.nexts.extend(random.sample(self.allMinos,self.NUM_MINO))
+        newNext = random.sample(copy.deepcopy(self.allMinos),self.NUM_MINO)
+        self.nexts = self.nexts + newNext
         self.dropMinoNum = 0
 
     def hold(self):
         #ホールドする
         if self.canHold == True:
+            print("hold")
             if self.holdMino == None:
                 self.holdMino = self.mino
                 self.loadMino()

@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 from View import View
 from Model import Model
+#from Sound import Sound
 from Controller import Controller
 import Const
 import sys
@@ -30,8 +31,9 @@ class App:
 
     def playGame(self):
         dropFrame = 60#60f毎に落下
-        dropFrame = 6
+        dropFrame = 6#テスト用スピード
         frameCount = 0
+        #self.sound.playBgm() #BGMstart
         while not (self.isGameOver() or self.isClear()):
             self.drawBoard()
             time.sleep(0.01)
@@ -41,6 +43,7 @@ class App:
                 if not self.tryDrop(): #落下可能なら落下
                     #落下不可能な場合
                     self.putMino() #ミノ設置
+                    #self.sound.SE("Landing")#着地音
                     if self.isClear():
                         break
                     self.loadMino()#落下ミノ更新
@@ -52,6 +55,7 @@ class App:
                     self.controller.keyDown(event.key)
         
         if self.isGameOver():
+            #self.sound.endBgm()
             print("GAME OVER")
         else:
             print("CLERA")
