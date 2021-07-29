@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import *
 from View import View
+from View import Font
 from Model import Model
 #from Sound import Sound
 from Controller import Controller
@@ -8,35 +9,52 @@ import Const
 import sys
 import time
 blockSize = Const.BLOCK_SIZE
-WIN_SIZE = (blockSize*10+240,blockSize*20+12)
-WIN_TITLE=""
+WIN_SIZE = Const.WIN_SIZE
+WIN_TITLE="REV_TETRIS"
 
 class App:
     def __init__(self):
         pygame.init()
+        self.font = Font()
+        #self.sound = Sound()
         self.screen = pygame.display.set_mode(WIN_SIZE)
         pygame.display.set_caption(WIN_TITLE)
-        self.view = View(self.screen)
+        self.view = View(self.screen,self.font)
         self.model = Model(self.view)
-        #self.sound = Sound()
-        self.controller = Controller(self.model)
+        self.controller = Controller(self.model,self.view)
     
     def startGame(self):
-        #while True:
-            #Title
-            #self.playGame()
-            #Resurt
+        while True:
+            self.view.drawTitle()
+            self.controller.pushAnyKey()
+            while True:
+                self.resetGame()
+                resultData = self.playGame()
+                self.view.drawResult(resultData)
+                key = self.controller.getKeyResultScene()
+                if key == "retry":
+                    continue
+                elif key == "title":
+                    break
 
-        self.playGame()
+
+
+    def resetGame(self):
+        self.screen = pygame.display.set_mode(WIN_SIZE)
+        pygame.display.set_caption(WIN_TITLE)
+        self.view = View(self.screen,self.font)
+        self.model = Model(self.view)
+        #self.sound = Sound()
+        self.controller = Controller(self.model,self.view)
 
     def playGame(self):
-        dropFrame = 60#60f毎に落下
-        dropFrame = 6#テスト用スピード
+        self.initDraw()#初期状態の画面描画
+        dropFrame = 30#30f毎に落下
         frameCount = 0
         #self.sound.playBgm() #BGMstart
         while not (self.isGameOver() or self.isClear()):
             self.drawBoard()
-            time.sleep(0.01)
+            pygame.time.wait(10)
             frameCount += 1
             if frameCount >= dropFrame:
                 frameCount = 0
@@ -56,16 +74,23 @@ class App:
         
         if self.isGameOver():
             #self.sound.endBgm()
+            alignedLines = self.model.getAlignedLines()
+            if len(alignedLines) != 0:
+                for rowNum in alignedLines:
+                    self.model.setBoardRow(rowNum,2)
+            self.view.drawBoard(self.model.board)
             print("GAME OVER")
+            return ("game over",0)
         else:
             print("CLERA")
+            return ("clear",self.getScore())
 
 
     def isGameOver(self):
         return self.model.checkGameOver()
 
     def isClear(self):
-        return self.model.checkGameOver()
+        return self.model.checkClear()
 
     def canDrop(self):
         return self.model.canDrop()
@@ -81,16 +106,17 @@ class App:
 
     def loadMino(self):
         self.model.loadMino()
-    
+
+    def getScore(self):
+        return self.model.calcScore()
+
+    def initDraw(self):
+        self.view.drawBoard(self.model.board,self.model.mino)
+        self.view.drawNexts(self.model.nexts[1:6])
+        self.view.drawHold(self.model.holdMino)
+
     def drawBoard(self):
         self.view.drawBoard(self.model.board,self.model.mino)
-    
-    def drawHold(self):
-        pass
-
-    def drawNext(self):
-        pass
-
 
 
 
