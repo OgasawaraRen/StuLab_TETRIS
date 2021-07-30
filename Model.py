@@ -4,16 +4,64 @@ import copy
 import Const
 from Mino import Mino
 
+class CheckPut():
+    #ミノが設置可能かを判断するクラス
+    @classmethod
+    def canSet(cls,board,mino,x,y,rotate)->bool:
+        #設置可能か？(盤外に出ない、既にあるブロックと重ならない)
+        for i,minoRow in enumerate(mino.shapes[rotate]):
+            blockY = y+i
+            for j,block in enumerate(minoRow):
+                if block == 0:#ブロックが空白の時は無視
+                    continue
+                blockX = x+j
+
+                if (blockX >= Const.BOARD_W or blockX < 0 or blockY >= Const.BOARD_H):# ボード外に出ていないか
+                    return False
+                if blockY < 0:
+                    continue
+                if board[blockY][blockX] == 1:#盤面に既にブロックがあるか
+                    return False
+        return True
+
+    @classmethod
+    def canDrop(cls,board,mino):
+        #1マスしたに移動可能か？
+        return cls.canSet(board,mino,mino.x,mino.y+1,mino.rotateNum)
+
+    @classmethod
+    def canRotate(cls,board,mino,rotateNum):
+        #回転可能か？
+        return cls.canSet(board,mino,mino.x,mino.y,rotateNum)
+
+    @classmethod
+    def canRotateRight(cls,board,mino):
+        #右回転可能か？
+        return cls.canRotate(board,mino,(mino.rotateNum+1)%4)
+
+    @classmethod
+    def canRotateLeft(cls,board,mino):
+        #左回転可能か？
+        return cls.canRotate(board,mino,(mino.rotateNum-1)%4)
+    
+    @classmethod
+    def canMoveRight(cls,board,mino):
+        #1マス右に移動可能か？
+        return cls.canSet(board,mino,mino.x+1,mino.y,mino.rotateNum)
+
+    @classmethod
+    def canMoveLeft(cls,board,mino):
+        #1マス左に移動可能か？
+        return cls.canSet(board,mino,mino.x-1,mino.y,mino.rotateNum)
+
 class Model:
     #ミノ、盤面は左上が(0,0)
-
     def __init__(self,view):
-        self.BOARD_H = 20 #盤面の高さ
         self.NUM_MINO = 7 #ミノの数
         self.TRAP = 10 #トラップマスの数
         self.baseShape = [] #７種類のミノ（0°）
         self.allMinos = self.setAllMinos() #7種類のミノ(Mino型)
-        self.board = np.zeros([self.BOARD_H,Const.BOARD_W],dtype=int) #現在の盤面 状態:0=空白 1=ブロックが存在 -1=トラップマス
+        self.board = np.zeros([Const.BOARD_H,Const.BOARD_W],dtype=int) #現在の盤面 状態:0=空白 1=ブロックが存在 -1=トラップマス
         self.nexts = self.initNexts(copy.deepcopy(self.allMinos)) #落下するミノ
         self.dropMinoNum = 0 #落下中のミノのインデックス
         self.mino = self.nexts[self.dropMinoNum] #落下中のミノ
@@ -57,10 +105,9 @@ class Model:
         for i in range(Const.BOARD_W): #全ての列にトラップマスを用意する
             traps.append(i)
             random.shuffle(traps)
-        for i in range(int(self.BOARD_H/2)): #二行ごとに一つのトラップマスを用意する
+        for i in range(int(Const.BOARD_H/2)): #二行ごとに一つのトラップマスを用意する
             self.board[i*2,traps[i]] = -1
             
-
 
     def checkGameOver(self)->bool:#3 ゲームオーバーだったらTrue,#ゲームオーバーか？
         check = np.count_nonzero(self.board == -1) #-1の数を数える
@@ -84,79 +131,38 @@ class Model:
         for i in range(Const.BOARD_W):
             self.board[rowNum][i] = val
 
-
     def checkClear(self)->bool:#ミノの１マスごとの値がボードからはみだしていたら
         #クリアしたか？
         return self.minoIsOutside
-
-    def canSet(self,x,y,rotate)->bool:
-        #設置可能か？(盤外に出ない、既にあるブロックと重ならない)
-        for i,minoRow in enumerate(self.mino.shapes[rotate]):
-            blockY = y+i
-            for j,block in enumerate(minoRow):
-                if block == 0:#ブロックが空白の時は無視
-                    continue
-                blockX = x+j
-
-                if (blockX >= Const.BOARD_W or blockX < 0 or blockY >= self.BOARD_H):# ボード外に出ていないか
-                    return False
-                if blockY < 0:
-                    continue
-                if self.board[blockY][blockX] == 1:#盤面に既にブロックがあるか
-                    return False
-        return True
-    
-    def canDrop(self)->bool:
-        #1マスしたに移動可能か？
-        return self.canSet(self.mino.x,self.mino.y+1,self.mino.rotateNum)
 
     def drop(self):
         self.mino.drop()
 
     def tryDrop(self):
-        if self.canDrop():
+        if CheckPut.canDrop(self.board,self.mino):
             self.drop()
             return True
         else:
             return False
 
-    def canRotate(self,rotateNum)->bool:
-        #回転可能か？ canSet利用
-        return self.canSet(self.mino.x,self.mino.y,rotateNum)
-
-    def canRotateRight(self):
-        return self.canRotate((self.mino.rotateNum+1)%4)
-
-    def canRotateLeft(self):
-        return self.canRotate((self.mino.rotateNum-1)%4)
-        
-    def canMoveRight(self)->bool:
-        #1マス右に移動可能か？
-        return self.canSet(self.mino.x+1,self.mino.y,self.mino.rotateNum)
-    
     def tryMoveRight(self):
-        if self.canMoveRight():
+        if CheckPut.canMoveRight(self.board,self.mino):
             self.mino.moveRight()
             return True
         return False
 
     def tryRotateRight(self):
-        if self.canRotateRight():
+        if CheckPut.canRotateRight(self.board,self.mino):
             self.mino.rotateRight()
             return True
         return False
     def tryRotateLeft(self):
-        if self.canRotateLeft():
+        if CheckPut.canRotateLeft(self.board,self.mino):
             self.mino.rotateLeft()
             return True
         return False
-    
-    def canMoveLeft(self)->bool:
-        #1マス左に移動可能か？
-        return self.canSet(self.mino.x-1,self.mino.y,self.mino.rotateNum)
-
     def tryMoveLeft(self):
-        if self.canMoveLeft():
+        if CheckPut.canMoveLeft(self.board,self.mino):
             self.mino.moveLeft()
             return True
         return False
@@ -217,7 +223,7 @@ class Model:
     def hardDrop(self):
         #ミノを一気に下に落下させる
         y = self.mino.y
-        while self.canSet(self.mino.x,y+1,self.mino.rotateNum):
+        while CheckPut.canSet(self.board,self.mino,self.mino.x,y+1,self.mino.rotateNum):
             y += 1
         self.mino.moveDown(y)
         self.putMino()
@@ -227,95 +233,3 @@ class Model:
         result = check / 2
         #スコアを計算する
         return result
-"""
-class MoveMino():
-    def __init__(self,model):
-        self.board = model.board
-        self.mino = model.mino
-        self.model = model
-    
-    def canSet(self,mino,x,y,rotate)->bool:
-        #設置可能か？(盤外に出ない、既にあるブロックと重ならない)
-        for i,minoRow in enumerate(self.mino.shapes[rotate]):
-            blockY = y+i
-            for j,block in enumerate(minoRow):
-                if block == 0:#ブロックが空白の時は無視
-                    continue
-                blockX = x+j
-                if blockY < 0:
-                    continue
-
-                if (blockX >= self.model.BOARD_W or blockX < 0 or blockY >= self.model.BOARD_H):# ボード外に出ていないか
-                    return False
-                if self.board[blockY][blockX] == 1:#盤面に既にブロックがあるか
-                    return False
-        return True
-    
-    def canDrop(self,mino)->bool:
-        #1マスしたに移動可能か？
-        #mino = self.model.mino
-        return self.canSet(mino,self.mino.x,self.mino.y+1,self.mino.rotateNum)
-
-    def drop(self):
-        self.mino.drop()
-
-    def tryDrop(self,mino):
-        #ドロップ可能ならドロップ、Trueを返す
-        if self.canDrop(mino):
-            self.mino.drop()
-            return True
-        return False
-
-    def hardDrop(self):
-        #ミノを一気に下に落下させる
-        #mino = self.model.mino
-        y = self.mino.y
-        while self.canSet(self.mino.x,y-1,self.mino.rotate):
-            y -= 1
-        self.mino.moveDown(y)
-        self.model.putMino()
-
-
-    def canRotate(self,rotateNum)->bool:
-        #回転可能か？ canSet利用
-        #mino = self.model.mino
-        return self.canSet(self.mino.x,self.mino.y,self.mino.rotateNum)
-    
-    def tryRotateRight(self):
-        #可能なら右回転
-        rotateNum = (self.mino.rotateNum+1)%4
-        if canRotate(self.mino,rotateNum):
-            self.mino.rotateRight()
-            return True
-        return False
-    
-    def tryRotateLeft(self):
-        #可能なら左回転
-        rotateNum = (self.mino.rotateNum-1)%4
-        if canRotate(self.mino,rotateNum):
-            self.mino.rotateLeft()
-            return True
-        return False
-
-    def canMoveRight(self)->bool:
-        #1マス右に移動可能か？
-        return self.canSet(mino.x+1,mino.y,mino.rotateNum)
-    
-    def tryMoveRight(self):
-        #可能なら右に移動
-        if canMoveRight():
-            mino.moveRight()
-            return True
-        return False
-    
-    def canMoveLeft(self)->bool:
-        #1マス左に移動可能か？
-        return self.canSet(mino.x-1,mino.y,mino.rotateNum)
-
-    def tryMoveLeft(self):
-        #可能なら左に移動
-        if canMoveLeft():
-            mino.moveLeft()
-            return True
-        return False
-"""

@@ -50,6 +50,7 @@ class Controller:
             self.key_up_bind[key]()
 
     def pushAnyKey(self):
+        #何かしらのキー入力を受けるまでループ
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:

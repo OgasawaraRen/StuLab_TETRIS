@@ -37,8 +37,6 @@ class App:
                 elif key == "title":
                     break
 
-
-
     def resetGame(self):
         self.screen = pygame.display.set_mode(WIN_SIZE)
         pygame.display.set_caption(WIN_TITLE)
@@ -48,8 +46,8 @@ class App:
         self.controller = Controller(self.model,self.view)
 
     def playGame(self):
-        self.initDraw()#初期状態の画面描画
-        dropFrame = 30#30f毎に落下
+        self.initDraw() #初期状態の画面描画
+        dropFrame = 30 #30f毎に落下
         frameCount = 0
         #self.sound.playBgm() #BGMstart
         while not (self.isGameOver() or self.isClear()):
