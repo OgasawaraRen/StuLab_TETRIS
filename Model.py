@@ -56,7 +56,7 @@ class CheckPut():
 
 class Model:
     #ミノ、盤面は左上が(0,0)
-    def __init__(self,view):
+    def __init__(self,view,sound):
         self.NUM_MINO = 7 #ミノの数
         self.TRAP = 10 #トラップマスの数
         self.baseShape = [] #７種類のミノ（0°）
@@ -70,6 +70,7 @@ class Model:
         self.canHold = True #ホールドが可能か？(ホールドはターンごとに一回のみ可能)
         self.initTraps() #トラップマスを設置
         self.view = view
+        self.sound = sound
 
     def setAllMinos(self)->[Mino]:#1
         #7種類*4のミノを返す

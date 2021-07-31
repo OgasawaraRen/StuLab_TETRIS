@@ -1,12 +1,12 @@
 import pygame
 import sys
 from pygame.locals import *
-#from Sound import Sound
+from Sound import Sound
 class Controller:
     def __init__(self,model,view):
         self.model = model
         self.view = view
-        #self.sound = model.sound
+        self.sound = model.sound
         self.mino = model.mino
         self.key_down_bind = {}
         self.key_down_bind[K_j] = lambda:self.keyDown_Rotate(self.model.tryRotateLeft) #左回転
@@ -22,17 +22,20 @@ class Controller:
 
     def keyDown_Rotate(self,func):
         if func():#回転可能ならSE
+            self.sound.SE("turn")
             #効果音
             pass
 
     def keyDown_hold(self):
         if self.model.hold():
             self.view.drawHold(self.model.holdMino)
+            self.sound.SE("hold")
             #効果音
 
     def keyDown_hardDrop(self):
         self.model.hardDrop()
         self.view.drawBoard(self.model.board,self.model.mino)
+        self.sound.SE("harddrop")
         #効果音
 
 
