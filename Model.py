@@ -71,7 +71,7 @@ class LandingPoint:
 
         #既にある落下位置を削除
         np.place(board,board == 2,0)
-        np.place(board,board == 3,-1)
+        np.place(board,board == 4,-1)
 
         y = cls.getHardDropY(board,tempMino)
         tempMino.moveDown(y)
@@ -84,7 +84,7 @@ class LandingPoint:
                 if block != 0:#ブロックが空白の時は無視
                     blockX = j+tempMino.x
                     if board[blockY][blockX] == -1:#トラップマス上に配置する場合
-                        board[blockY][blockX] = 3#黄色
+                        board[blockY][blockX] = 4#黄色(落下位置用)
                     else:
                         board[blockY][blockX] = 2#グレー
         return board
@@ -161,7 +161,7 @@ class Model:
             
 
     def checkGameOver(self): #ゲームオーバーだったらTrue,#ゲームオーバーか？
-        check = np.count_nonzero(self.board == -1) + np.count_nonzero(self.board == 3) #トラップの数を数える
+        check = np.count_nonzero(self.board == -1) + np.count_nonzero(self.board == 4) #トラップの数を数える
         if check != self.TRAP:   
             return True
         for row in self.board:
@@ -240,7 +240,7 @@ class Model:
             for j,block in enumerate(minoRow):
                 if block != 0:#ブロックが空白の時は無視
                     blockX = j+self.mino.x
-                    if self.board[blockY][blockX] == -1:#トラップマス上に配置する場合
+                    if self.board[blockY][blockX] == -1 or self.board[blockY][blockX] == 4:#トラップマス上に配置する場合
                         self.board[blockY][blockX] = 3
                     else:
                         self.board[blockY][blockX] = block

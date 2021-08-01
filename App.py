@@ -5,6 +5,7 @@ from View import Font
 from Model import Model
 from Sound import Sound
 from Controller import Controller
+from Model import Score
 import Const
 import sys
 import time
@@ -80,14 +81,12 @@ class App:
                 for rowNum in alignedLines:
                     self.model.setBoardRow(rowNum,3)
             self.view.drawBoard(self.model.board)
-            print("GAME OVER")
             return ("game over",0)
         else:
             self.sound.SE("gameclear") #clearvoice
             self.sound.endBgm() #bgm終了
-            if Score.calcScore() >= 90:  #高得点限定ボイス
+            if Score.calcScore(self.model.board) >= 90:  #高得点限定ボイス
                 self.sound.SE("perfect")
-            print("CLERA")
             return ("clear",self.getScore())
 
 
