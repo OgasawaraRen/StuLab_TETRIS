@@ -7,7 +7,7 @@ from Mino import Mino
 class CheckPut():
     #ミノが設置可能かを判断するクラス
     @classmethod
-    def canSet(cls,board,mino,x,y,rotate)->bool:
+    def canSet(cls,board,mino,x,y,rotate):
         #設置可能か？(盤外に出ない、既にあるブロックと重ならない)
         for i,minoRow in enumerate(mino.shapes[rotate]):
             blockY = y+i
@@ -54,6 +54,44 @@ class CheckPut():
         #1マス左に移動可能か？
         return cls.canSet(board,mino,mino.x-1,mino.y,mino.rotateNum)
 
+class LandingPoint:
+    #落下地点を予測
+    @classmethod
+    def getHardDropY(cls,board,mino):
+        #ハードドロップ後のY座標を取得する
+        y = mino.y
+        while CheckPut.canSet(board,mino,mino.x,y+1,mino.rotateNum):
+            y += 1
+        return y
+    
+    @classmethod
+    def setLandingPoint(cls,board,mino):
+        #落下位置予想を追加したボードを返す
+        tempMino = copy.deepcopy(mino)
+
+        #既にある落下位置を削除
+        np.place(board,board == 2,0)
+        np.place(board,board == 3,-1)
+
+        y = cls.getHardDropY(board,tempMino)
+        tempMino.moveDown(y)
+        rotateNum = tempMino.rotateNum
+        for i,minoRow in enumerate(tempMino.shapes[rotateNum]):
+            blockY = i+tempMino.y
+            if blockY < 0:#ブロックが上外にある場合無視
+                continue
+            for j,block in enumerate(minoRow):
+                if block != 0:#ブロックが空白の時は無視
+                    blockX = j+tempMino.x
+                    if board[blockY][blockX] == -1:#トラップマス上に配置する場合
+                        board[blockY][blockX] = 3#黄色
+                    else:
+                        board[blockY][blockX] = 2#グレー
+        return board
+
+
+
+
 class Model:
     #ミノ、盤面は左上が(0,0)
     def __init__(self,view,sound):
@@ -65,6 +103,7 @@ class Model:
         self.nexts = self.initNexts(copy.deepcopy(self.allMinos)) #落下するミノ
         self.dropMinoNum = 0 #落下中のミノのインデックス
         self.mino = self.nexts[self.dropMinoNum] #落下中のミノ
+        self.updateLandingPoint() #落下予想位置を設定
         self.holdMino = None #ホールド中のミノ(存在しなければNone)
         self.minoIsOutside = False #ミノが枠外に出ているか？
         self.canHold = True #ホールドが可能か？(ホールドはターンごとに一回のみ可能)
@@ -72,7 +111,7 @@ class Model:
         self.view = view
         self.sound = sound
 
-    def setAllMinos(self)->[Mino]:#1
+    def setAllMinos(self):
         #7種類*4のミノを返す
         i_mino = np.array([[ 0, 0, 0, 0 ], [ 1, 1, 1, 1 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ]])
         o_mino = np.array([[ 1, 1 ], [ 1, 1 ]])
@@ -90,11 +129,11 @@ class Model:
             allminos.append(mino)
         return allminos
 
-    def getShapes(self,baseShape)->[np.ndarray]:
+    def getShapes(self,baseShape):
         #引数で受け取った形を4パターン(90度回転*4)にして返す
         return [np.rot90(baseShape,i) for i in range(0,-4,-1)]
 
-    def initNexts(self,minos)->[np.ndarray]:
+    def initNexts(self,minos):
         #14個のミノを返す
         sample1 = random.sample(copy.deepcopy(minos),self.NUM_MINO)
         sample2 = random.sample(copy.deepcopy(minos),self.NUM_MINO)
@@ -110,12 +149,12 @@ class Model:
             self.board[i*2,traps[i]] = -1
             
 
-    def checkGameOver(self)->bool:#3 ゲームオーバーだったらTrue,#ゲームオーバーか？
-        check = np.count_nonzero(self.board == -1) #-1の数を数える
+    def checkGameOver(self): #ゲームオーバーだったらTrue,#ゲームオーバーか？
+        check = np.count_nonzero(self.board == -1) + np.count_nonzero(self.board == 3) #トラップの数を数える
         if check != self.TRAP:   
             return True
         for row in self.board:
-            if np.sum(row) == Const.BOARD_W:
+            if len(set(row)) == 1 and row[0] == 1:
                 return True
         return False
     
@@ -132,41 +171,50 @@ class Model:
         for i in range(Const.BOARD_W):
             self.board[rowNum][i] = val
 
-    def checkClear(self)->bool:#ミノの１マスごとの値がボードからはみだしていたら
+    def checkClear(self): #ミノの１マスごとの値がボードからはみだしていたら
         #クリアしたか？
         return self.minoIsOutside
 
-    def drop(self):
-        self.mino.drop()
-
     def tryDrop(self):
+        #ドロップ可能ならドロップしTrueを返す、不可ならドロップせずFalseを返す
         if CheckPut.canDrop(self.board,self.mino):
-            self.drop()
+            self.mino.drop()
             return True
         else:
             return False
 
     def tryMoveRight(self):
+        #右に移動可能なら移動しTrueを返す、不可なら移動せずFalseを返す
         if CheckPut.canMoveRight(self.board,self.mino):
             self.mino.moveRight()
+            self.board = LandingPoint.setLandingPoint(self.board,self.mino)
+            self.updateLandingPoint()
+            return True
+        return False
+
+    def tryMoveLeft(self):
+        #左に移動可能なら移動しTrueを返す、不可なら移動せずFalseを返す
+        if CheckPut.canMoveLeft(self.board,self.mino):
+            self.mino.moveLeft()
+            self.updateLandingPoint()
             return True
         return False
 
     def tryRotateRight(self):
+        #右回転可能なら回転しTrueを返す、不可なら回転せずFalseを返す
         if CheckPut.canRotateRight(self.board,self.mino):
             self.mino.rotateRight()
+            self.updateLandingPoint()
             return True
         return False
     def tryRotateLeft(self):
+        #左回転可能なら回転しTrueを返す、不可なら回転せずFalseを返す
         if CheckPut.canRotateLeft(self.board,self.mino):
             self.mino.rotateLeft()
+            self.updateLandingPoint()
             return True
         return False
-    def tryMoveLeft(self):
-        if CheckPut.canMoveLeft(self.board,self.mino):
-            self.mino.moveLeft()
-            return True
-        return False
+    
 
     def putMino(self):
         #盤面にミノを設置(canSetは通過している前提)、ホールドを許可
@@ -182,7 +230,7 @@ class Model:
                 if block != 0:#ブロックが空白の時は無視
                     blockX = j+self.mino.x
                     if self.board[blockY][blockX] == -1:#トラップマス上に配置する場合
-                        self.board[blockY][blockX] = 2
+                        self.board[blockY][blockX] = 3
                     else:
                         self.board[blockY][blockX] = block
 
@@ -193,6 +241,7 @@ class Model:
             self.reloadNext()
         self.mino = self.nexts[self.dropMinoNum]
         self.view.drawNexts(self.nexts[self.dropMinoNum+1:self.dropMinoNum+6])
+        self.updateLandingPoint()
 
     def reloadNext(self):
         #前半7つを削除、新しく7つを付け足す、dropMinoNumを0に(リセット)
@@ -212,6 +261,7 @@ class Model:
                 self.holdMino = self.mino
                 self.mino = changeMino
             self.canHold = False
+            self.updateLandingPoint()
 
             #ホールドミノを初期状態にする
             self.holdMino.x = int(Const.BOARD_W/2) - len(self.holdMino.shapes[0][0])
@@ -223,14 +273,22 @@ class Model:
 
     def hardDrop(self):
         #ミノを一気に下に落下させる
-        y = self.mino.y
-        while CheckPut.canSet(self.board,self.mino,self.mino.x,y+1,self.mino.rotateNum):
-            y += 1
+        y = LandingPoint.getHardDropY(self.board,self.mino)
         self.mino.moveDown(y)
         self.putMino()
 
-    def calcScore(self) -> int:
-        check = np.count_nonzero(self.board != 0) #０以外の要素を数える
-        result = check / 2
+    def updateLandingPoint(self):
+        #落下予想位置を更新
+        self.board = LandingPoint.setLandingPoint(self.board,self.mino)
+
+    def calcScore(self):
+        blockSum = 0
+        for row in self.board:
+            rowBlockCount = np.count_nonzero(row == 1)#１列のブロックの数を数える
+            if rowBlockCount == Const.BOARD_W-1: #1マス以外すべて埋まっていたらボーナス(+1マス追加)
+                rowBlockCount = Const.BOARD_W
+            blockSum += rowBlockCount
+        
+        result = blockSum / 2
         #スコアを計算する
         return result

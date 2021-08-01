@@ -76,7 +76,7 @@ class App:
             alignedLines = self.model.getAlignedLines()
             if len(alignedLines) != 0:
                 for rowNum in alignedLines:
-                    self.model.setBoardRow(rowNum,2)
+                    self.model.setBoardRow(rowNum,3)
             self.view.drawBoard(self.model.board)
             print("GAME OVER")
             return ("game over",0)
