@@ -7,7 +7,6 @@ class Controller:
         self.model = model
         self.view = view
         self.sound = model.sound
-        self.mino = model.mino
         self.key_down_bind = {}
         self.key_down_bind[K_j] = lambda:self.keyDown_Rotate(self.model.tryRotateLeft) #左回転
         self.key_down_bind[K_l] = lambda:self.keyDown_Rotate(self.model.tryRotateRight)#右回転
@@ -47,12 +46,8 @@ class Controller:
         if key in self.key_down_bind:
             self.key_down_bind[key]()
             self.view.drawBoard(self.model.board,self.model.mino)
-    
-    def keyUp(self, key):
-        if key in self.key_up_bind:
-            self.key_up_bind[key]()
 
-    def pushAnyKey(self):
+    def titleInput(self):
         #何かしらのキー入力を受けるまでループ
         while True:
             for event in pygame.event.get():
@@ -63,7 +58,9 @@ class Controller:
                     if event.key == K_ESCAPE:
                         pygame.quit()
                         sys.exit()
-                    return
+                    elif event.key == K_q:#Qキー押した場合はボイスモード
+                        return "voice"
+                    return "normal"#それ以外だと通常モード
 
     def getKeyResultScene(self):
         while True:

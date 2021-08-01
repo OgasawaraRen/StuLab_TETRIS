@@ -22,25 +22,27 @@ class App:
         self.view = View(self.screen,self.font)
         self.model = Model(self.view,self.sound)
         self.controller = Controller(self.model,self.view)
-    
+
     def startGame(self):
         while True:
             self.view.drawTitle()
-            self.controller.pushAnyKey()
+            mode = self.controller.titleInput()
             while True:
-                self.resetGame()
+                self.resetGame(mode)
                 resultData = self.playGame()
                 self.view.drawResult(resultData)
                 key = self.controller.getKeyResultScene()
+                self.sound.cancelBgm()
                 if key == "retry":
                     continue
                 elif key == "title":
                     break
 
-    def resetGame(self):
+    def resetGame(self,mode):
         self.screen = pygame.display.set_mode(WIN_SIZE)
         pygame.display.set_caption(WIN_TITLE)
         self.view = View(self.screen,self.font)
+        self.sound = Sound(mode)
         self.model = Model(self.view,self.sound)
         self.controller = Controller(self.model,self.view)
 
@@ -83,7 +85,7 @@ class App:
         else:
             self.sound.SE("gameclear") #clearvoice
             self.sound.endBgm() #bgm終了
-            if self.model.calcScore() >= 90:  #高得点限定ボイス
+            if Score.calcScore() >= 90:  #高得点限定ボイス
                 self.sound.SE("perfect")
             print("CLERA")
             return ("clear",self.getScore())
@@ -111,7 +113,7 @@ class App:
         self.model.loadMino()
 
     def getScore(self):
-        return self.model.calcScore()
+        return Score.calcScore(self.model.board)
 
     def initDraw(self):
         self.view.drawBoard(self.model.board,self.model.mino)

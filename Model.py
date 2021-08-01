@@ -89,13 +89,24 @@ class LandingPoint:
                         board[blockY][blockX] = 2#グレー
         return board
 
-
+class Score:
+    @classmethod
+    def calcScore(self,board):
+        blockSum = 0
+        for row in board:
+            rowBlockCount = np.count_nonzero(row == 1)#１列のブロックの数を数える
+            if rowBlockCount == Const.BOARD_W-1: #1マス以外すべて埋まっていたらボーナス(+1マス追加)
+                rowBlockCount = Const.BOARD_W
+            blockSum += rowBlockCount
+        
+        result = blockSum / 2
+        #スコアを計算する
+        return result
 
 
 class Model:
     #ミノ、盤面は左上が(0,0)
     def __init__(self,view,sound):
-        self.NUM_MINO = 7 #ミノの数
         self.TRAP = 10 #トラップマスの数
         self.baseShape = [] #７種類のミノ（0°）
         self.allMinos = self.setAllMinos() #7種類のミノ(Mino型)
@@ -103,11 +114,11 @@ class Model:
         self.nexts = self.initNexts(copy.deepcopy(self.allMinos)) #落下するミノ
         self.dropMinoNum = 0 #落下中のミノのインデックス
         self.mino = self.nexts[self.dropMinoNum] #落下中のミノ
-        self.updateLandingPoint() #落下予想位置を設定
         self.holdMino = None #ホールド中のミノ(存在しなければNone)
         self.minoIsOutside = False #ミノが枠外に出ているか？
         self.canHold = True #ホールドが可能か？(ホールドはターンごとに一回のみ可能)
         self.initTraps() #トラップマスを設置
+        self.updateLandingPoint() #落下予想位置を設定
         self.view = view
         self.sound = sound
 
@@ -123,7 +134,7 @@ class Model:
         baseShape = [i_mino,o_mino,t_mino,z_mino,s_mino,j_mino,l_mino]
         minoSizes = [(4,3),(2,2),(3,2),(3,2),(3,2),(3,2),(3,2)]
         allminos = [] 
-        for i in range(self.NUM_MINO):
+        for i in range(Const.NUM_MINO):
             shapes = self.getShapes(baseShape[i])
             mino = Mino(shapes,minoSizes[i])#ミノを生成、４パターンの回転形を設定
             allminos.append(mino)
@@ -135,8 +146,8 @@ class Model:
 
     def initNexts(self,minos):
         #14個のミノを返す
-        sample1 = random.sample(copy.deepcopy(minos),self.NUM_MINO)
-        sample2 = random.sample(copy.deepcopy(minos),self.NUM_MINO)
+        sample1 = random.sample(copy.deepcopy(minos),Const.NUM_MINO)
+        sample2 = random.sample(copy.deepcopy(minos),Const.NUM_MINO)
         nextMinos = sample1 + sample2
         return nextMinos
 
@@ -246,7 +257,7 @@ class Model:
     def reloadNext(self):
         #前半7つを削除、新しく7つを付け足す、dropMinoNumを0に(リセット)
         del self.nexts[:7]
-        newNext = random.sample(copy.deepcopy(self.allMinos),self.NUM_MINO)
+        newNext = random.sample(copy.deepcopy(self.allMinos),Const.NUM_MINO)
         self.nexts = self.nexts + newNext
         self.dropMinoNum = 0
 
@@ -280,15 +291,3 @@ class Model:
     def updateLandingPoint(self):
         #落下予想位置を更新
         self.board = LandingPoint.setLandingPoint(self.board,self.mino)
-
-    def calcScore(self):
-        blockSum = 0
-        for row in self.board:
-            rowBlockCount = np.count_nonzero(row == 1)#１列のブロックの数を数える
-            if rowBlockCount == Const.BOARD_W-1: #1マス以外すべて埋まっていたらボーナス(+1マス追加)
-                rowBlockCount = Const.BOARD_W
-            blockSum += rowBlockCount
-        
-        result = blockSum / 2
-        #スコアを計算する
-        return result
