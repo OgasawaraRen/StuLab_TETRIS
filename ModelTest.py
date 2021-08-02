@@ -18,7 +18,7 @@ class ModelDriver:
         for i in range(int(Const.BOARD_H/2)): #二行ごとに一つのトラップマスを用意する
             self.board[i*2,traps[i]] = -1
 
-class PerfectScoreTest(unittest.TestCase):
+class PerfectScoreTest(unittest.TestCase):  #クリア条件を満たす最大数のミノを設置できた場合、スコアが100%になるか
     def test_Model(self):
         md = ModelDriver()
         self.board = md.board
@@ -34,6 +34,7 @@ class PerfectScoreTest(unittest.TestCase):
         expected = 100.0
         actual = Score.calcScore(self.board)
         self.assertEqual(expected,actual)
+
 
 if __name__ == "__main__":
     unittest.main()
