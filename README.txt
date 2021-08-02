@@ -1,9 +1,9 @@
 <実行方法>
-1.Tetrisフォルダ内のvenvをアクティベートする(Game内で使用するpygameやnumpyは添付したvenv内にインストール済み)
-2.cdコマンドでTetrisディレクトリに移動
+1.cdコマンドでRev_Tetrisディレクトリに移動
+2.Rev_Tetrisフォルダ内のvenvをアクティベートする(Game内で使用するpygameやnumpyは添付したvenv内にインストール済み)
 3.ターミナルにて「python App.py」を実行
 ※ライブラリ・仮想環境の問題で実行できない場合はpygameとnumpyをインストールした環境で、
-Tetrisディレクトリ内で「python App.py」を実行してください
+Rev_Tetrisディレクトリ内で「python App.py」を実行してください
 
 <ルール>
 1.ミノを積み重ねボードの最上位に到達するとクリアとなる.

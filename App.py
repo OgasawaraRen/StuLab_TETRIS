@@ -83,10 +83,12 @@ class App:
             self.view.drawBoard(self.model.board)
             return ("game over",0)
         else:
-            self.sound.SE("gameclear") #clearvoice
             self.sound.endBgm() #bgm終了
-            if Score.calcScore(self.model.board) >= 90:  #高得点限定ボイス
+            if Score.calcScore(self.model.board) >= 90:  #高得点限定SE
                 self.sound.SE("perfect")
+            else:
+                self.sound.SE("gameclear") #clearSE
+
             return ("clear",self.getScore())
 
 
