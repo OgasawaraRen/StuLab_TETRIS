@@ -275,7 +275,7 @@ class Model:
             self.updateLandingPoint()
 
             #ホールドミノを初期状態にする
-            self.holdMino.x = int(Const.BOARD_W/2) - len(self.holdMino.shapes[0][0])
+            self.holdMino.x = (Const.BOARD_W//2) - (len(self.holdMino.shapes[0][0])//2)#x座標
             self.holdMino.y = -2
             self.holdMino.rotateNum = 0
             return True
